@@ -19,15 +19,23 @@ function [target_found, target_r, target_v] = CFAR(power_matrix, cfar_obj, CUTId
         detected_powers = power_matrix(lin_indices);
         detected_powers_db = 10 * log10(detected_powers + 1e-6);
         
-        % --- FILTRACJA DUCHÓW ---
-        % Odrzucamy cele powyżej 2.5m oraz zbyt słabe (poniżej 85 dB)
-        valid_range = r_grid(det_rows) <= 2.5; 
-        valid_power = detected_powers_db >= 85; 
+        % --- ROZWIĄZANIE BŁĘDU (Wymuszanie wektorów poziomych) ---
+        ranges = r_grid(det_rows);
+        
+        % Gwarantujemy, że zmienne logiczne to płaskie wektory 1D
+        valid_range = ranges(:)' <= 2.5; 
+        valid_power = detected_powers_db(:)' >= 85; 
+        
+        % Teraz operator '&' poprawnie porówna element po elemencie
         valid_targets = valid_range & valid_power;
+        % ----------------------------------------------------------
         
         % Aplikacja masek
         det_rows = det_rows(valid_targets);
         det_cols = det_cols(valid_targets);
+        
+        % Wymuszamy poziom również na mocach, żeby indeksowanie zadziałało
+        detected_powers = detected_powers(:)'; 
         detected_powers = detected_powers(valid_targets);
         
         % Jeśli zostały jakieś prawowite cele, wybierz najsilniejszy
